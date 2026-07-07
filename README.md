@@ -164,6 +164,27 @@ The following documents are included in this repository:
 
 ---
 
+## Performance & Optimization
+
+Performance was considered throughout development to provide a fast and responsive experience.
+
+### Lighthouse Scores
+![alt text](image.png)
+
+### Performance Optimizations Implemented
+
+- ✅ Built with **Next.js 16 App Router**.
+- ✅ **Server Components** used for ticket listing to reduce client-side JavaScript.
+- ✅ Data fetching performed on the server to minimize client-side API requests.
+- ✅ Client Components are used only where interactivity is required (filters, notes, AI actions).
+- ✅ URL-based filtering (`searchParams`) enables server-side rendering while keeping pages shareable.
+- ✅ Added loading states and skeleton UI to improve perceived performance during navigation.
+- ✅ Search uses **debouncing** to avoid unnecessary server requests while typing.
+- ✅ Database queries are optimized with Prisma relations and ordered fetching.
+- ✅ Optimized bundle by keeping business logic on the server whenever possible.
+- ✅ Semantic HTML and accessible form labels improve SEO and accessibility.
+- ✅ Responsive design with minimal layout shifts (CLS).
+
 # Future Improvements
 
 - Similar ticket recommendations

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2, Search } from "lucide-react";
 
@@ -22,14 +22,30 @@ export function TicketFilters() {
 
   const [isPending, startTransition] = useTransition();
 
-  const [search, setSearch] = useState(
-    searchParams.get("search") ?? ""
-  );
+  const urlSearch = searchParams.get("search") ?? "";
 
-  // Keep input synced with URL
+  const [search, setSearch] = useState(urlSearch);
+
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Sync only when URL changes externally (Back/Forward/Refresh)
   useEffect(() => {
-    setSearch(searchParams.get("search") ?? "");
-  }, [searchParams]);
+    if (urlSearch !== search) {
+      setSearch(urlSearch);
+    }
+  }, [urlSearch]);
+
+  function navigate(params: URLSearchParams) {
+    const next = params.toString();
+
+    if (next === searchParams.toString()) {
+      return;
+    }
+
+    startTransition(() => {
+      router.push(`/tickets?${next}`);
+    });
+  }
 
   function updateFilter(key: string, value: string | null) {
     const params = new URLSearchParams(searchParams.toString());
@@ -40,36 +56,42 @@ export function TicketFilters() {
       params.set(key, value);
     }
 
-    // Don't navigate if nothing changed
-    if (params.toString() === searchParams.toString()) {
-      return;
-    }
-
-    startTransition(() => {
-      router.push(`/tickets?${params.toString()}`);
-    });
+    navigate(params);
   }
 
-  // Debounced search
-  useEffect(() => {
-    const timeout = setTimeout(() => {
+  function handleSearch(value: string) {
+    setSearch(value);
+
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+
+    timeoutRef.current = setTimeout(() => {
       const params = new URLSearchParams(searchParams.toString());
 
-      if (search.trim()) {
-        params.set("search", search.trim());
+      const trimmed = value.trim();
+
+      if (trimmed) {
+        params.set("search", trimmed);
       } else {
         params.delete("search");
       }
 
-      if (params.toString() === searchParams.toString()) {
-        return;
+      const next = params.toString();
+
+      if (next !== searchParams.toString()) {
+        router.replace(`/tickets?${next}`);
       }
+    }, 400);
+  }
 
-      router.replace(`/tickets?${params.toString()}`);
-    }, 350);
-
-    return () => clearTimeout(timeout);
-  }, [search]);
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
 
   return (
     <>
@@ -78,9 +100,7 @@ export function TicketFilters() {
         aria-live="polite"
         aria-atomic="true"
       >
-        {isPending
-          ? "Updating ticket filters."
-          : "Ticket filters updated."}
+        {isPending ? "Updating ticket filters." : "Ticket filters updated."}
       </span>
 
       <div
@@ -96,10 +116,12 @@ export function TicketFilters() {
 
           <Input
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => handleSearch(e.target.value)}
             placeholder="Search by subject, customer, email or category..."
             aria-label="Search tickets"
             className="pl-8"
+            autoComplete="off"
+            spellCheck={false}
           />
         </div>
 
@@ -119,10 +141,7 @@ export function TicketFilters() {
             <SelectItem value="all">All Status</SelectItem>
 
             {statuses.map((status) => (
-              <SelectItem
-                key={status}
-                value={status}
-              >
+              <SelectItem key={status} value={status}>
                 {status}
               </SelectItem>
             ))}
@@ -145,10 +164,7 @@ export function TicketFilters() {
             <SelectItem value="all">All Priority</SelectItem>
 
             {priorities.map((priority) => (
-              <SelectItem
-                key={priority}
-                value={priority}
-              >
+              <SelectItem key={priority} value={priority}>
                 {priority}
               </SelectItem>
             ))}

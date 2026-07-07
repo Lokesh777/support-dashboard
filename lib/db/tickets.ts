@@ -16,8 +16,7 @@ const globalForPrisma = globalThis as typeof globalThis & {
   reeRoutePrisma?: PrismaClient;
 };
 
-const prisma =
-  globalForPrisma.reeRoutePrisma ?? new PrismaClient();
+const prisma = globalForPrisma.reeRoutePrisma ?? new PrismaClient();
 
 if (process.env.NODE_ENV !== "production") {
   globalForPrisma.reeRoutePrisma = prisma;
@@ -60,10 +59,34 @@ export async function listTickets({
     ...(search
       ? {
           OR: [
-            { subject: { contains: search } },
-            { category: { contains: search } },
-            { customer: { name: { contains: search } } },
-            { customer: { email: { contains: search } } },
+            {
+              subject: {
+                contains: search,
+                mode: "insensitive",
+              },
+            },
+            {
+              category: {
+                contains: search,
+                mode: "insensitive",
+              },
+            },
+            {
+              customer: {
+                name: {
+                  contains: search,
+                  mode: "insensitive",
+                },
+              },
+            },
+            {
+              customer: {
+                email: {
+                  contains: search,
+                  mode: "insensitive",
+                },
+              },
+            },
           ],
         }
       : {}),
